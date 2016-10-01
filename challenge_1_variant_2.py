@@ -38,7 +38,7 @@ if __name__ == '__main__':
         # fallback for the one picture which detects ZERO sift features
         if img_feats == None:
             dense_keypoints = dense_extractor.detect(img)
-            img_feats= sift.compute(img, dense_keypoints)[1]
+            img_feats= sift.compute(img, dense_keypoints)
 
         kmeans_feats.extend(img_feats)
         feat_holder.append(img_feats)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         img_feats = sift.detectAndCompute(img, None)[1]
         if img_feats == None:
             dense_keypoints = dense_extractor.detect(img)
-            img_feats= sift.compute(img, dense_keypoints)[1]
+            img_feats= sift.compute(img, dense_keypoints)
         test_feat_holder.append(img_feats)
 
     per_test_image_clusters = [kmeans.predict(sift_feats) for sift_feats in test_feat_holder]
