@@ -1,5 +1,6 @@
 import cPickle as pickle
 import os.path
+import pdb
 
 import scipy.io as sio
 import cv2
@@ -10,42 +11,57 @@ from keras_models.imagenet_utils import preprocess_input
 class data_holder:
 
     # true for color, false for greyscale. Color is needed for implementation of convnet
-    def load_training(self, color_or_greyscale):
+    def load_training(self, is_color):
         train_names = self.filenames['trainImNames']
         train_data = []
         train_labels = []
 
         if self.environment == 'dev':
             for i in range(2):
-                loaded_images = [cv2.imread('dataset/' + train_names[i,j][0].split('397')[1], color_or_greyscale) for j in range(train_names.shape[1])]
-                resized_images = [cv2.resize(img.astype('float'), (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images]
+                loaded_images = [cv2.imread('dataset/' + train_names[i,j][0].split('397')[1], is_color) for j in range(train_names.shape[1])]
+                if is_color:
+                    resized_images = [cv2.resize(img.astype('float'), (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images]
+                else:
+                    resized_images = [cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images]
                 train_data.extend(resized_images)
                 train_labels.extend([i]*train_names.shape[1])
         else:
             for i in range(train_names.shape[0]):
-                loaded_images = [cv2.imread(train_names[i,j][0],0) for j in range(train_names.shape[1])]
-                train_data.extend(loaded_images)
-                train_labels.extend([i]*train_names.shape[1])
-            # process them accordingly - mean subtraction and greyscale
+                loaded_images = [cv2.imread('dataset/' + train_names[i,j][0].split('397')[1], is_color) for j in range(train_names.shape[1])]
+                print self.index_to_class[i]
+
+                if is_color:
+                    resized_images = [cv2.resize(img.astype('float'), (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images if img is not None]
+                else:
+                    resized_images = [cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images if img is not None]
+                train_data.extend(resized_images)
+                train_labels.extend([i]*len(resized_images))
 
         return train_data, train_labels
 
-    def load_test(self, color_or_greyscale):
+    def load_test(self, is_color):
         test_names = self.filenames['test1ImNames']
         test_data = []
         test_labels = []
 
         if self.environment == 'dev':
             for i in range(2):
-                loaded_images = [cv2.imread('dataset/' + test_names[i,j][0].split('397')[1], color_or_greyscale) for j in range(test_names.shape[1])]
-                resized_images = [cv2.resize(img.astype('float'), (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images]
+                loaded_images = [cv2.imread('dataset/' + test_names[i,j][0].split('397')[1], is_color) for j in range(test_names.shape[1])]
+                if is_color:
+                    resized_images = [cv2.resize(img.astype('float'), (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images]
+                else:
+                    resized_images = [cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images]
                 test_data.extend(resized_images)
                 test_labels.extend([i]*test_names.shape[1])
         else:
             for i in range(test_names.shape[0]):
-                loaded_images = [cv2.imread(test_names[i,j][0],0) for j in range(test_names.shape[1])]
-                test_data.extend(loaded_images)
-                test_labels.extend([i]*test_names.shape[1])
+                loaded_images = [cv2.imread('dataset/' + test_names[i,j][0].split('397')[1], is_color) for j in range(test_names.shape[1])]
+                if is_color:
+                    resized_images = [cv2.resize(img.astype('float'), (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images if img is not None]
+                else:
+                    resized_images = [cv2.resize(img, (224, 224), interpolation=cv2.INTER_CUBIC) for img in loaded_images if img is not None]
+                test_data.extend(resized_images)
+                test_labels.extend([i]*len(resized_images))
 
         return test_data, test_labels
 
@@ -84,18 +100,16 @@ class data_holder:
         self.environment = environment
         self.challenge_no = challenge_no
 
-        if environment == 'dev':
-            prefix = ''
-        else:
-            prefix = '/projects/cs381V.grauman/'
-        self.filenames = sio.loadmat(prefix + 'filenames.mat')
+        self.filenames = sio.loadmat('filenames.mat')
+        self.index_to_class = self.filenames['classnames'][0]
+        self.PICKLE_FOLDER = 'pickled'
+        self.TRAINING_FILE = '/vgg_train_data'
+        self.class_labels = [label[0] for label in self.index_to_class]
 
         self.training_data, self.training_labels = self.load_training(challenge_no == 2)
         self.test_data, self.test_labels = self.load_test(challenge_no == 2)
-        self.index_to_class = self.filenames['classnames'][0]
 
-        self.PICKLE_FOLDER = 'pickled'
-        self.TRAINING_FILE = '/vgg_train_data'
+
 
 
 
