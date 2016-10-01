@@ -8,6 +8,8 @@ import numpy as np
 
 from keras_models.imagenet_utils import preprocess_input
 
+
+# wrote this to load in and hold the dataset so I can share that across challenges.
 class data_holder:
 
     # true for color, false for greyscale. Color is needed for implementation of convnet
@@ -16,6 +18,7 @@ class data_holder:
         train_data = []
         train_labels = []
 
+        #dev flag is for working out bugs on a subset of data.
         if self.environment == 'dev':
             for i in range(2):
                 loaded_images = [cv2.imread('dataset/' + train_names[i,j][0].split('397')[1], is_color) for j in range(train_names.shape[1])]
@@ -40,7 +43,7 @@ class data_holder:
         return train_data, train_labels
 
     def load_test(self, is_color):
-        test_names = self.filenames['test1ImNames']
+        test_names = self.test_2_filenames['test2ImNames']
         test_data = []
         test_labels = []
 
@@ -65,10 +68,12 @@ class data_holder:
 
         return test_data, test_labels
 
+    #preparation for running data with CNN
     def prep_for_vgg(self):
-        self.training_data = [preprocess_input(np.expand_dims(self.training_data[i], axis=0)) for i in range(len(self.training_data))]
         self.test_data = [preprocess_input(np.expand_dims(self.test_data[i], axis=0)) for i in range(len(self.test_data))]
 
+    #series of methods to pickle datasets; used so I don't have to go through the computationally expensive
+    #step of extracting features from a CNN more than once.
     def is_pickled(self, filename):
         return os.path.isfile(self.PICKLE_FOLDER + '/' + filename)
 
@@ -80,9 +85,8 @@ class data_holder:
         vgg_train_feats = pickled_data[0]
         vgg_test_feats = pickled_data[1]
         self.training_labels = pickled_data[2]
-        self.test_data = pickled_data[3]
 
-        return vgg_train_feats, vgg_test_feats,
+        return vgg_train_feats, vgg_test_feats
 
     def pickle_data(self, vgg_train_feats, vgg_test_feats, filename):
 
@@ -101,6 +105,7 @@ class data_holder:
         self.challenge_no = challenge_no
 
         self.filenames = sio.loadmat('filenames.mat')
+        self.test_2_filenames = sio.loadmat('test2ImNames.mat')
         self.index_to_class = self.filenames['classnames'][0]
         self.PICKLE_FOLDER = 'pickled'
         self.TRAINING_FILE = '/vgg_train_data'

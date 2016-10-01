@@ -16,26 +16,24 @@ import confusionmatrix
 if __name__ == '__main__':
     CLASSIFICATION_TASK = 2
     DATA_FILE = "challenge_2_data"
+    NEW_DATA_FILE = "challenge_2_data_2"
 
-    data_holder = hw2_dao.data_holder('not_dev', CLASSIFICATION_TASK)
+    data_holder = hw2_dao.data_holder('n_dev', CLASSIFICATION_TASK)
 
-    if data_holder.is_pickled(DATA_FILE):
-        print('Loading Pre-Computed Features')
-        vgg_training_features, vgg_test_features = data_holder.load_pickled_data(DATA_FILE)
+    print('Loading Pre-Computed Features')
+    vgg_training_features, _ = data_holder.load_pickled_data(DATA_FILE)
 
-    else:
-        data_holder.prep_for_vgg()
+    data_holder.prep_for_vgg()
 
-        #Extract last fully connected layer of VGG16 trained on imagenet data as per https://arxiv.org/pdf/1409.1556v6.pdf
-        vgg_model = VGG16(weights='imagenet', include_top=True)
-        feature_extractor = Model(input=vgg_model.input, output=vgg_model.get_layer('fc2').output)
+    #Extract last fully connected layer of VGG16 trained on imagenet data as per https://arxiv.org/pdf/1409.1556v6.pdf
+    vgg_model = VGG16(weights='imagenet', include_top=True)
+    feature_extractor = Model(input=vgg_model.input, output=vgg_model.get_layer('fc2').output)
 
-        #Infer features from model
-        print('Generating Features')
-        vgg_training_features = [feature_extractor.predict(x).squeeze() for x in data_holder.training_data]
-        vgg_test_features = [feature_extractor.predict(x).squeeze() for x in data_holder.test_data]
+    #Infer features from model
+    print('Generating Features')
+    vgg_test_features = [feature_extractor.predict(x).squeeze() for x in data_holder.test_data]
 
-        data_holder.pickle_data(vgg_training_features, vgg_test_features, DATA_FILE)
+    data_holder.pickle_data(vgg_training_features, vgg_test_features, NEW_DATA_FILE)
 
     #Train SVM; sklearn uses 1 v 1 SVM algorithm
     print('Training SVM')
@@ -50,7 +48,7 @@ if __name__ == '__main__':
     preds = clf.predict(vgg_test_features)
 
     confmat = confusion_matrix(data_holder.test_labels, preds)
-    confusionmatrix.plot_confusion_matrix(confmat, data_holder.class_labels, 'challenge_2')
+    confusionmatrix.plot_confusion_matrix(confmat, data_holder.class_labels, 'challenge_2_data_2')
 
 
 
